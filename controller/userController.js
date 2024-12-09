@@ -1,3 +1,4 @@
+const userModel = require('../model/userModel');
 const UsersModel = require('../model/userModel');
 
 exports.registerUser = async (req, res, next) => {
@@ -29,6 +30,39 @@ exports.registerUser = async (req, res, next) => {
             message: "An error occurred while registering the user. Please try again later.",
             error: error.message,
         });
+    }
+}
+
+exports.userLogin = async(req,res,next)=>{
+    try {
+        const {Email,password}= req.body;
+        let user = await UsersModel.findOne({Email}).select("+Password");
+        console.log("user",user)
+        if(!user){
+            return res.status(400).json({
+                success:false,
+                message:"User not exist"
+            })
+        }
+        const matchPassword = await user.isMatchPassword(password);
+        if(!matchPassword){
+            return res.status(400).json({
+                success:false,
+                message:"password is invalid"
+            })
+        }
+        const token = await user.generateToken();
+        res.status(200).cookie("token", token,{expires: new Date(Date.now()+90 * 24 * 60 * 60 * 1000),httpOnly:true}).json({
+            success:true,
+            user,
+            token
+        })
+        
+    } catch (error) {
+        res.status(500).json({
+            success:false,
+            message:error.message
+        })
     }
 }
 
