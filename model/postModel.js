@@ -16,7 +16,19 @@ const postSchema= new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:"Users",
         required:true
-    }
+    },
+    like:[
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref:"Users"
+        }
+    ],
+    comments:[
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref:"Users"
+        }
+    ]
 });
 
 module.exports = mongoose.model("Post",postSchema);
