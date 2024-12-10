@@ -4,13 +4,15 @@ const UserModel = require('../model/userModel')
 
 exports.createPost = async (req, res, next) => {
     try {
-        const { title, content, userId } = req.body;
+        const { title, content, image } = req.body;
+        const userId = req.user._id;
         const post = await PostModel.create({
             title,
             content,
+            image,
             userId
         });
-        const user = await UserModel.findById(userId);
+        const user = await UserModel.findById(req.user._id);
         user.posts.push(post._id);
         await user.save();
 
