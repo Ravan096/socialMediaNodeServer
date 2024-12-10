@@ -35,20 +35,20 @@ const userSchema = new mongoose.Schema({
     }]
 });
 
-userSchema.pre("save", async function (next){
-    if(this.isModified("Password")){
-        this.Password = await bcrypt.hash(this.Password,10)
+userSchema.pre("save", async function (next) {
+    if (this.isModified("Password")) {
+        this.Password = await bcrypt.hash(this.Password, 10)
     }
     next();
 });
 
-userSchema.methods.isMatchPassword = async function (password){
+userSchema.methods.isMatchPassword = async function (password) {
     console.log(password)
     return await bcrypt.compare(password, this.Password)
 }
 
 userSchema.methods.generateToken = function () {
-    return jwt.sign({_id: this._id},process.env.JWT_SECRET)
+    return jwt.sign({ _id: this._id }, process.env.JWT_SECRET)
 }
 
 
