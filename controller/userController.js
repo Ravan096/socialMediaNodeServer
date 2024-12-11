@@ -1,4 +1,3 @@
-const userModel = require('../model/userModel');
 const UsersModel = require('../model/userModel');
 
 exports.registerUser = async (req, res, next) => {
@@ -99,7 +98,6 @@ exports.deleteUser = async (req, res, next) => {
         })
 
     } catch (error) {
-        console.log("Error on deleting User", error);
         res.status(500).json({
             success: false,
             message: `User is not delete `,
@@ -122,7 +120,6 @@ exports.getSingleUser = async (req, res, next) => {
             singleUser
         })
     } catch (error) {
-        console.log("Error while getting single user", error),
             res.status(500).json({
                 success: false,
                 message: error.message
@@ -181,6 +178,32 @@ exports.logoutUser = async (req, res, next) => {
         res.status(500).json({
             success: false,
             message: error.message
+        })
+    }
+}
+
+exports.changePassword = async (req,res,next)=>{
+    try {
+        const user = req.user;
+        const {oldPassword, newPassword}= req.body;
+        const isPasswordMatch = await user.isMatchPassword(oldPassword);
+        if(isPasswordMatch){
+            user.Password = newPassword;
+            await user.save();
+            res.status(200).json({
+                success:true,
+                message:"Password changed successfully"
+            })
+        }
+        res.status(200).json({
+            success:false,
+            message:"old password is not matched"
+        })
+        
+    } catch (error) {
+        res.status(500).json({
+            success:false,
+            message:error.message
         })
     }
 }
