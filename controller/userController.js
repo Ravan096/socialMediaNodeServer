@@ -1,4 +1,7 @@
+const { text } = require('body-parser');
+const { sendMail } = require('../middleware/sendMail');
 const UsersModel = require('../model/userModel');
+const crypto = require("crypto")
 
 exports.registerUser = async (req, res, next) => {
     try {
@@ -120,10 +123,10 @@ exports.getSingleUser = async (req, res, next) => {
             singleUser
         })
     } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: error.message
-            })
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
     }
 }
 
@@ -182,28 +185,105 @@ exports.logoutUser = async (req, res, next) => {
     }
 }
 
-exports.changePassword = async (req,res,next)=>{
+exports.changePassword = async (req, res, next) => {
     try {
         const user = req.user;
-        const {oldPassword, newPassword}= req.body;
+        const { oldPassword, newPassword } = req.body;
         const isPasswordMatch = await user.isMatchPassword(oldPassword);
-        if(isPasswordMatch){
+        if (isPasswordMatch) {
             user.Password = newPassword;
             await user.save();
             res.status(200).json({
-                success:true,
-                message:"Password changed successfully"
+                success: true,
+                message: "Password changed successfully"
             })
         }
         res.status(200).json({
-            success:false,
-            message:"old password is not matched"
+            success: false,
+            message: "old password is incorrect"
         })
-        
+
     } catch (error) {
         res.status(500).json({
-            success:false,
-            message:error.message
+            success: false,
+            message: error.message
         })
     }
+}
+
+exports.forgetPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        const user = await UsersModel.findOne({ Email: email });
+        if (!user) {
+            res.status(404).json({
+                success: false,
+                message: "user not found"
+            })
+        }
+        const resetPasswordToken = user.getResetPasswordToken();
+        await user.save();
+
+        const resetUrl = `${req.protocol}://${req.get("host")}/api/v1/password/reset/${resetPasswordToken}`;
+
+        const mailOptions = {
+            to: user.Email,
+            text: `Reset Your Password by clicking on the link below: \n\n ${resetUrl}`
+        }
+        try {
+            await sendMail(mailOptions);
+            res.status(200).json({
+                success: true,
+                message: `mail sent to ${user.Email}`,
+                resetPasswordToken,
+                resetUrl
+            })
+        } catch (error) {
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpire = undefined;
+            await user.save();
+            res.status(500).json({
+                success: false,
+                message: error.message
+            })
+        }
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+
+exports.resetPassword = async (req, res, next) => {
+    try {
+        const resetPasswordToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+        const user = await UsersModel.findOne({
+            resetPasswordToken:resetPasswordToken,
+            resetPasswordExpire: { $gt: Date.now() }
+        });
+        if (!user) {
+            res.status(404).json({
+                success: false,
+                message: "invalid token or token expire"
+            })
+        }
+        user.Password = req.body.password;
+        user.resetPasswordExpire = undefined;
+        user.resetPasswordToken = undefined;
+        await user.save();
+        res.status(200).json({
+            success: true,
+            message: "password updated successfully",
+            user
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+
 }
