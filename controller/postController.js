@@ -104,3 +104,62 @@ exports.likeAndUnlikePost = async (req, res, next) => {
         })
     }
 }
+
+exports.getPostOfFollowing = async (req, res, next) => {
+    try {
+        const user = await UserModel.findById(req.user._id);
+        const posts = await PostModel.find({
+            userId: {
+                $in: user.following
+            }
+        })
+        res.status(200).json({
+            success: true,
+            posts,
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+exports.commentOnPost = async (req, res, next) => {
+    try {
+        const user = req.user._id;
+        const post = await PostModel.findById(req.params.id);
+        const { comment } = req.body;
+        let commentIndex = -1;
+        post.comments.forEach((item, index) => {
+            if (item.user.toString() === req.user._id.toString()) {
+                commentIndex = index;
+            }
+        })
+
+        if (commentIndex !== -1) {
+            post.comments[commentIndex].comment = comment;
+            await post.save();;
+            res.status(200).json({
+                success: true,
+                message: "comment updated"
+            })
+        } else {
+            post.comments.push({
+                user: user,
+                comment: comment
+            })
+            await post.save();
+
+            res.status(200).json({
+                success: true,
+                message: "comment successfully"
+            })
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
