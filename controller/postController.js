@@ -163,3 +163,40 @@ exports.commentOnPost = async (req, res, next) => {
         })
     }
 }
+
+
+exports.savePost = async (req, res) => {
+    try {
+        const loggedInUser = req.user._id;
+        const post = await PostModel.findById(req.params.id);
+        console.log(loggedInUser.savePost);
+        if (!post) {
+            return res.status(404).json({
+                success: false,
+                message: "Post not found"
+            })
+        }
+
+        if (post.savedPost.includes(loggedInUser)) {
+            const index = post.like.indexOf(loggedInUser);
+            post.like.splice(index, 1);
+            await post.save();
+            res.status(201).json({
+                success: true,
+                message: "Post Unliked"
+            })
+        } else {
+            post.like.push(loggedInUser);
+            await post.save();
+            res.status(201).json({
+                success: true,
+                message: "Post liked"
+            })
+        }
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
