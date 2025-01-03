@@ -3,10 +3,19 @@ const dotenv = require('dotenv');
 const connectDatabase = require('./config/database');
 const { Server } = require("socket.io");
 const { createServer } = require('http');
+const cloudinary = require("cloudinary");
+
 
 
 dotenv.config({ path: "config/config.env" })
 connectDatabase();
+
+cloudinary.v2.config({
+    cloud_name: 'my_cloud_name',
+    api_key: 'my_key',
+    api_secret: 'my_secret'
+})
+
 const server = createServer(app);
 const io = new Server(server, {
     cors: {

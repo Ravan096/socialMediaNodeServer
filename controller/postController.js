@@ -167,9 +167,8 @@ exports.commentOnPost = async (req, res, next) => {
 
 exports.savePost = async (req, res) => {
     try {
-        const loggedInUser = req.user._id;
+        const loggedInUser = req.user;
         const post = await PostModel.findById(req.params.id);
-        console.log(loggedInUser.savePost);
         if (!post) {
             return res.status(404).json({
                 success: false,
@@ -177,20 +176,20 @@ exports.savePost = async (req, res) => {
             })
         }
 
-        if (post.savedPost.includes(loggedInUser)) {
-            const index = post.like.indexOf(loggedInUser);
-            post.like.splice(index, 1);
-            await post.save();
+        if (loggedInUser.savedPost.includes(post._id)) {
+            const index = loggedInUser.savedPost.indexOf(post._id);
+            loggedInUser.savedPost.splice(index, 1);
+            await loggedInUser.save();
             res.status(201).json({
                 success: true,
-                message: "Post Unliked"
+                message: "Post Unsaved"
             })
         } else {
-            post.like.push(loggedInUser);
-            await post.save();
+            loggedInUser.savedPost.push(post._id);
+            await loggedInUser.save();
             res.status(201).json({
                 success: true,
-                message: "Post liked"
+                message: "Post Saved"
             })
         }
     } catch (error) {
@@ -200,3 +199,96 @@ exports.savePost = async (req, res) => {
         })
     }
 }
+
+
+// exports.commentOnPost = async (req, res) => {
+//     try {
+//         const { comment, parentId } = req.body;
+//         const userId = req.user._id;
+//         if (parentId) {
+//             const parentComment = await Comment.findById(parentId);
+//             if (!parentComment) {
+//                 return res.status(404).json({
+//                     success: false,
+//                     message: "Parent comment not found"
+//                 });
+//             }
+//             const reply = await Comment.create({
+//                 user: userId,
+//                 comment
+//             });
+//             parentComment.replies.push(reply._id);
+//             await parentComment.save();
+
+//             res.status(201).json({
+//                 success: true,
+//                 message: "Reply added successfully",
+//                 reply
+//             });
+//         } else {
+//             const post = await PostModel.findById(req.params.id);
+//             if (!post) {
+//                 return res.status(404).json({
+//                     success: false,
+//                     message: "Post not found"
+//                 });
+//             }
+
+//             const newComment = await Comment.create({
+//                 user: userId,
+//                 comment
+//             });
+
+//             post.comments.push(newComment._id);
+//             await post.save();
+
+//             res.status(201).json({
+//                 success: true,
+//                 message: "Comment added successfully",
+//                 newComment
+//             });
+//         }
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: error.message
+//         });
+//     }
+// };
+
+
+
+// exports.getPostWithComments = async (req, res) => {
+//     try {
+//         const post = await PostModel.findById(req.params.id)
+//             .populate({
+//                 path: "comments",
+//                 populate: {
+//                     path: "replies",
+//                     model: "Comment",
+//                     populate: {
+//                         path: "replies",
+//                         model: "Comment"
+//                     }
+//                 }
+//             })
+//             .exec();
+
+//         if (!post) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "Post not found"
+//             });
+//         }
+
+//         res.status(200).json({
+//             success: true,
+//             post
+//         });
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: error.message
+//         });
+//     }
+// };

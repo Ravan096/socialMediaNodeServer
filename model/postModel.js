@@ -29,16 +29,37 @@ const postSchema = new mongoose.Schema({
     ],
     comments: [
         {
-            user:{
+            user: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "Users"
             },
-            comment:{
-                type:String,
-                required:true
+            comment: {
+                type: String,
+                required: true
             }
         }
     ]
 });
 
+const commentSchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Users",
+        required: true
+    },
+    comment: {
+        type: String,
+        required: true
+    },
+    replies: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "CommentReply"
+    }],
+    CreatedAt: {
+        type: Date,
+        default: Date.now
+    }
+})
+
+module.exports = mongoose.model("CommentReply", commentSchema)
 module.exports = mongoose.model("Post", postSchema);
