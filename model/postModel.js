@@ -9,8 +9,14 @@ const postSchema = new mongoose.Schema({
         type: String,
     },
     image: {
-        type: String,
-        required: true
+        public_Id: {
+            type: String,
+            required: true
+        },
+        url: {
+            type: String,
+            required: true
+        }
     },
     CreatedAt: {
         type: Date,

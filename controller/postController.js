@@ -1,17 +1,37 @@
 const PostModel = require('../model/postModel');
-const UserModel = require('../model/userModel')
+const UserModel = require('../model/userModel');
+const dataUri = require('../utils/dataUri');
+const cloudinary = require('cloudinary');
 
 
 exports.createPost = async (req, res, next) => {
     try {
-        const { title, content, image } = req.body;
+        const { title, content } = req.body;
         const userId = req.user._id;
+        const file = req.file;
+
+        if (!file) {
+            return res.status(400).json({
+                success: false,
+                message: "File is required"
+            })
+        }
+
+        const imageuri = dataUri(file);
+        const cloud = await cloudinary.v2.uploader.upload(imageuri.content, {
+            folder: "Post"
+        });
+
         const post = await PostModel.create({
             title,
             content,
-            image,
-            userId
+            userId,
+            image: {
+                public_Id: cloud.public_id,
+                url: cloud.secure_url
+            }
         });
+
         const user = await UserModel.findById(req.user._id);
         user.posts.push(post._id);
         await user.save();
@@ -23,9 +43,11 @@ exports.createPost = async (req, res, next) => {
         })
 
     } catch (error) {
+        console.log(error);
+
         res.status(500).json({
             success: false,
-            message: error.message
+            message: error
         })
     }
 }

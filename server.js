@@ -4,6 +4,10 @@ const connectDatabase = require('./config/database');
 const { Server } = require("socket.io");
 const { createServer } = require('http');
 const cloudinary = require("cloudinary");
+const http = require("https");
+const agent = new http.Agent({
+    rejectUnauthorized: false
+})
 
 
 
@@ -11,10 +15,12 @@ dotenv.config({ path: "config/config.env" })
 connectDatabase();
 
 cloudinary.v2.config({
-    cloud_name: 'my_cloud_name',
-    api_key: 'my_key',
-    api_secret: 'my_secret'
-})
+    cloud_name: process.env.CLOUD_NAME,
+    api_key: process.env.CLOUD_API_KEY,
+    api_secret: process.env.CLOUD_API_SECRET,
+    secure: true,
+});
+
 
 const server = createServer(app);
 const io = new Server(server, {
