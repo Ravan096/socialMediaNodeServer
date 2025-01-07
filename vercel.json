@@ -1,5 +1,5 @@
 {
-    "version": 2,
+  "version": 2,
     "name": "nodejs_social",
     "builds": [
         {
@@ -14,3 +14,4 @@
         }
     ]
 }
+
