@@ -9,8 +9,14 @@ const postSchema = new mongoose.Schema({
         type: String,
     },
     image: {
-        type: String,
-        required: true
+        public_Id: {
+            type: String,
+            required: true
+        },
+        url: {
+            type: String,
+            required: true
+        }
     },
     CreatedAt: {
         type: Date,
@@ -29,10 +35,37 @@ const postSchema = new mongoose.Schema({
     ],
     comments: [
         {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Users"
+            user: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Users"
+            },
+            comment: {
+                type: String,
+                required: true
+            }
         }
     ]
 });
 
+const commentSchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Users",
+        required: true
+    },
+    comment: {
+        type: String,
+        required: true
+    },
+    replies: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "CommentReply"
+    }],
+    CreatedAt: {
+        type: Date,
+        default: Date.now
+    }
+})
+
+module.exports = mongoose.model("CommentReply", commentSchema)
 module.exports = mongoose.model("Post", postSchema);
