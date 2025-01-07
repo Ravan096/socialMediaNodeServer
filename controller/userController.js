@@ -1,7 +1,8 @@
-const { text } = require('body-parser');
 const { sendMail } = require('../middleware/sendMail');
 const UsersModel = require('../model/userModel');
-const crypto = require("crypto")
+const crypto = require("crypto");
+const dataUri = require('../utils/dataUri');
+const cloudinary = require("cloudinary");
 
 exports.registerUser = async (req, res, next) => {
     try {
@@ -53,10 +54,46 @@ exports.userLogin = async (req, res, next) => {
             })
         }
         const token = await user.generateToken();
-        res.status(200).cookie("token", token, { expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), httpOnly: true, secure:true }).json({
+        res.status(200).cookie("token", token, { expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), httpOnly: true, secure: true }).json({
             success: true,
             user,
             token
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+exports.updateUser = async (req, res, next) => {
+    try {
+        const user = req.user;
+        const files = req.file;
+
+        if (!files) {
+            return res.status(400).json({
+                success: false,
+                message: "Avatar file is required"
+            })
+        }
+
+
+        const imageUri = dataUri(file);
+        const cloud = await cloudinary.v2.uploader.upload(imageUri.content, {
+            folder: "User"
+        });
+
+        user.Avatar = {
+            public_id: cloud.public_id,
+            url: cloud.secure_url
+        };
+        await user.save();
+        res.status(200).json({
+            success: true,
+            message: "avatar updated successfully"
         })
 
     } catch (error) {
@@ -261,7 +298,7 @@ exports.resetPassword = async (req, res, next) => {
     try {
         const resetPasswordToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
         const user = await UsersModel.findOne({
-            resetPasswordToken:resetPasswordToken,
+            resetPasswordToken: resetPasswordToken,
             resetPasswordExpire: { $gt: Date.now() }
         });
         if (!user) {
