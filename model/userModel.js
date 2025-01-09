@@ -21,6 +21,16 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    Avtar: {
+        public_id: {
+            type: String,
+            default: ""
+        },
+        url: {
+            type: String,
+            default: ""
+        }
+    },
     posts: [
         {
             type: mongoose.Schema.Types.ObjectId,
