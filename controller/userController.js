@@ -54,7 +54,12 @@ exports.userLogin = async (req, res, next) => {
             })
         }
         const token = await user.generateToken();
-        res.status(200).cookie("token", token, { expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), httpOnly: true, secure: true }).json({
+        res.status(200).cookie("token", token, {
+            expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "Production",
+            sameSite: "none"
+        }).json({
             success: true,
             user,
             token
