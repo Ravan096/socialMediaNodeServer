@@ -6,7 +6,7 @@ const cloudinary = require('cloudinary');
 
 exports.createPost = async (req, res, next) => {
     try {
-        const { title, content } = req.body;
+        const { title, content, Location } = req.body;
         const userId = req.user._id;
         const file = req.file;
 
@@ -25,6 +25,7 @@ exports.createPost = async (req, res, next) => {
         const post = await PostModel.create({
             title,
             content,
+            Location,
             userId,
             image: {
                 public_Id: cloud.public_id,
@@ -134,7 +135,7 @@ exports.getPostOfFollowing = async (req, res, next) => {
             userId: {
                 $in: user.following
             }
-        })
+        }).populate("userId", "FirstName LastName Email Avatar _id")
         res.status(200).json({
             success: true,
             posts,
