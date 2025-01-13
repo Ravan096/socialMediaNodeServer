@@ -135,7 +135,7 @@ exports.getPostOfFollowing = async (req, res, next) => {
             userId: {
                 $in: user.following
             }
-        }).populate("userId", "FirstName LastName Email Avatar _id")
+        }).populate("userId", "FirstName LastName Email Avatar _id").sort({ CreatedAt: -1 })
         res.status(200).json({
             success: true,
             posts,
