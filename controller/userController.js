@@ -58,7 +58,7 @@ exports.userLogin = async (req, res, next) => {
         res.cookie("token", token, {
             expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
             httpOnly: true,
-            secure: process.env.NODE_ENV === "Production",
+            secure: process.env.NODE_ENV === "production",
             sameSite: 'None'
         })
         res.status(200).json({
