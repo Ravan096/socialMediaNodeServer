@@ -7,17 +7,17 @@ const cloudinary = require("cloudinary");
 exports.registerUser = async (req, res, next) => {
     try {
 
-        const { FirstName, LastName, Email, Password } = req.body;
+        const { FullName, userName, Email, Password } = req.body;
 
-        if (!FirstName || !LastName || !Email || !Password) {
+        if (!FullName || !userName || !Email || !Password) {
             return res.status(400).json({
                 success: false,
                 message: "Please provide all required fields: firstName, lastName, Email, Password.",
             });
         }
         const newUser = await UsersModel.create({
-            FirstName,
-            LastName,
+            FullName,
+            userName,
             Email,
             Password
         })
@@ -54,12 +54,14 @@ exports.userLogin = async (req, res, next) => {
             })
         }
         const token = await user.generateToken();
-        res.status(200).cookie("token", token, {
+
+        res.cookie("token", token, {
             expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
             httpOnly: true,
             secure: process.env.NODE_ENV === "Production",
-            sameSite: "none"
-        }).json({
+            sameSite: 'None'
+        })
+        res.status(200).json({
             success: true,
             user,
             token
@@ -75,7 +77,7 @@ exports.userLogin = async (req, res, next) => {
 
 exports.getMe = async (req, res, next) => {
     try {
-        const user = await UsersModel.findById(req.user._id);
+        const user = await UsersModel.findById(req.user._id).populate("posts", "image _id");
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -97,30 +99,96 @@ exports.getMe = async (req, res, next) => {
 exports.updateUser = async (req, res, next) => {
     try {
         const user = req.user;
-        const files = req.file;
+        const { userName, Email, bio, dob, gender, website, state, mobile } = req.body;
+        // const files = req.file;
 
-        if (!files) {
-            return res.status(400).json({
-                success: false,
-                message: "Avatar file is required"
-            })
+        // if (!files) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: "Avatar file is required"
+        //     })
+        // }
+
+
+
+
+
+
+        // if (!["male", "female", "non-binary", "other"].includes(gender?.toLowerCase())) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: "Invalid gender value",
+        //     });
+        // }
+
+        // if (dob) {
+        //     const dateOfBirth = new Date(dob);
+        //     const today = new Date();
+        //     const age = today.getFullYear() - dateOfBirth.getFullYear();
+        //     if (age < 18 || isNaN(dateOfBirth)) {
+        //         return res.status(400).json({
+        //             success: false,
+        //             message: "You must be at least 18 years old",
+        //         });
+        //     }
+        // }
+
+        // if (files) {
+        //     const imageUri = dataUri(files);
+        //     const cloud = await cloudinary.v2.uploader.upload(imageUri.content, {
+        //         folder: "User"
+        //     });
+
+        //     user.Avatar = {
+        //         public_id: cloud.public_id,
+        //         url: cloud.secure_url
+        //     };
+        // }
+
+
+
+        if (dob) user.dob = dob;
+        if (website) user.website = website;
+        if (bio) user.bio = bio;
+        if (Email) {
+            if (!/^\S+@\S+\.\S+$/.test(Email)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Valid Email is Required"
+                })
+            }
+
+            user.Email = Email;
         }
-
-
-        const imageUri = dataUri(file);
-        const cloud = await cloudinary.v2.uploader.upload(imageUri.content, {
-            folder: "User"
-        });
-
-        user.Avatar = {
-            public_id: cloud.public_id,
-            url: cloud.secure_url
-        };
+        if (userName) user.userName = userName;
+        if (gender) user.gender = gender;
+        if (state) user.state = state;
+        if (mobile) {
+            if (!/^[6-9]\d{9}$/.test(mobile)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Valid mobile is required"
+                })
+            }
+            user.mobile = mobile;
+        }
         await user.save();
         res.status(200).json({
             success: true,
             message: "avatar updated successfully"
         })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+
+exports.findUserByName = async (req, res, next) => {
+    try {
 
     } catch (error) {
         res.status(500).json({

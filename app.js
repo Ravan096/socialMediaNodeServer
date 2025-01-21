@@ -10,9 +10,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParse());
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "https://mitrajunction.netlify.app/"],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials:true
+    credentials: true
 }));
 
 const user = require('./route/userRoute');
