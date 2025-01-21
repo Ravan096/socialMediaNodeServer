@@ -5,17 +5,22 @@ const crypto = require("crypto");
 const { type } = require('os');
 
 const userSchema = new mongoose.Schema({
-    FirstName: {
+    FullName: {
         type: String,
     },
-    LastName: {
+    userName: {
         type: String
     },
     Email: {
-        type: String
+        type: String,
+        unique: true
     },
     Password: {
         type: String
+    },
+    mobile: {
+        type: String,
+        unique: true
     },
     CreatedAt: {
         type: Date,
@@ -49,6 +54,26 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Post"
     }],
+    bio: {
+        type: String
+    },
+    gender: {
+        type: String,
+        enum: {
+            values: ['male', 'female', 'non-binary', 'other'],
+            message: '{VALUE} is not a valid gender',
+        },
+        set: (value) => value.toLowerCase()
+    },
+    dob: {
+        type: Date
+    },
+    website: {
+        type: String
+    },
+    state: {
+        type: String
+    },
     resetPasswordToken: String,
     resetPasswordExpire: Date
 });

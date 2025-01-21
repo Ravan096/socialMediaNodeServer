@@ -136,9 +136,19 @@ exports.getPostOfFollowing = async (req, res, next) => {
                 $in: user.following
             }
         }).populate("userId", "FirstName LastName Email Avatar _id").sort({ CreatedAt: -1 })
+        const postWithLike = posts.map((post) => {
+            const isLike = post.like.includes(req.user._id);
+            const isSave = req.user.savedPost.includes(post._id);
+            return {
+                ...post.toObject(),
+                isLike,
+                isSave
+            }
+        })
+
         res.status(200).json({
             success: true,
-            posts,
+            posts: postWithLike,
         })
     } catch (error) {
         res.status(500).json({
