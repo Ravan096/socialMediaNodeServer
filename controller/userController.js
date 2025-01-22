@@ -59,8 +59,7 @@ exports.userLogin = async (req, res, next) => {
             expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: 'None',
-            maxAge:3600000
+            sameSite: 'None'
         })
         res.status(200).json({
             success: true,
