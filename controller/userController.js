@@ -59,7 +59,8 @@ exports.userLogin = async (req, res, next) => {
             expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: 'None'
+            sameSite: 'None',
+            domain:"https://mitrajunction.netlify.app"
         })
         res.status(200).json({
             success: true,
