@@ -5,14 +5,28 @@ const { Server } = require("socket.io");
 const { createServer } = require('http');
 const cloudinary = require("cloudinary");
 const http = require("https");
+const {connectPassport} = require('./utils/authProvider');
+const passport = require('passport');
+const session = require('express-session');
 const agent = new http.Agent({
     rejectUnauthorized: false
 })
 
 
-
 dotenv.config({ path: "config/config.env" })
+app.use(session({
+    secret:process.env.SESSION_SECRET,
+    resave:false,
+    saveUninitialized:false,
+    cookie:{secure:false}
+}))
+app.use(passport.authenticate('session'))
+app.use(passport.initialize());
+app.use(passport.session());
+
 connectDatabase();
+connectPassport();
+
 
 cloudinary.v2.config({
     cloud_name: process.env.CLOUD_NAME,

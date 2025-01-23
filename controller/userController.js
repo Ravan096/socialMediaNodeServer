@@ -12,7 +12,7 @@ exports.registerUser = async (req, res, next) => {
         if (!FullName || !userName || !Email || !Password) {
             return res.status(400).json({
                 success: false,
-                message: "Please provide all required fields: firstName, lastName, Email, Password.",
+                message: "Please provide all required fields: FullName, Email, Password.",
             });
         }
         const newUser = await UsersModel.create({
