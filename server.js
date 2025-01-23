@@ -8,6 +8,7 @@ const http = require("https");
 const {connectPassport} = require('./utils/authProvider');
 const passport = require('passport');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const agent = new http.Agent({
     rejectUnauthorized: false
 })
@@ -17,8 +18,9 @@ dotenv.config({ path: "config/config.env" })
 app.use(session({
     secret:process.env.SESSION_SECRET,
     resave:false,
-    saveUninitialized:false,
-    cookie:{secure:false}
+    saveUninitialized:true,
+    cookie:{secure:false},
+    store: MongoStore.create({mongoUrl:process.env.DataUri})
 }))
 app.use(passport.authenticate('session'))
 app.use(passport.initialize());
