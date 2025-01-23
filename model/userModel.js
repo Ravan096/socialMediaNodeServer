@@ -11,6 +11,18 @@ const userSchema = new mongoose.Schema({
     userName: {
         type: String
     },
+    GoogleId: {
+        type: String,
+        unique: true
+    },
+    FacebookId: {
+        type: String,
+        unique: true
+    },
+    GithubId: {
+        type: String,
+        unique: true
+    },
     Email: {
         type: String,
         unique: true
