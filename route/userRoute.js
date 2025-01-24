@@ -21,11 +21,15 @@ router.get('/googlelogin', passport.authenticate('google',
     { scope: ['profile', 'email'] }));
 
 router.get('/githublogin', passport.authenticate('github',
-    { scope: ['user'] }))
+    { scope: ['user:email'] }))
 
-router.get('/login',passport.authenticate('github',{
+router.get('/login',passport.authenticate('google',{
     failureRedirect:'http://localhost:4000',
-    successRedirect:process.env.FrontendUrl
+    successRedirect:'http://localhost:4000'
+}))
+router.get('login',passport.authenticate('github',{
+    failureRedirect:"http://localhost:4000",
+    successRedirect:"http://localhost:4000"
 }))
 
 module.exports = router;
