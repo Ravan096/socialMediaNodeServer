@@ -21,7 +21,7 @@ const connectPassport = () => {
                     const newUser = await UserModel.create({
                         GoogleId: profile.id,
                         FullName: profile.displayName,
-                        Email: profile,
+                        Email: profile.emails[0].value,
                     });
                     console.log(newUser)
                     return done(null, newUser)
@@ -78,7 +78,7 @@ const connectPassport = () => {
                     return done(null, user)
                 }
             } catch (error) {
-                console.error("Error in Google Strategy:", error);
+                console.error("Error in Github Strategy:", error);
                 return done(error, null);
             }
         }

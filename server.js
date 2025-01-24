@@ -22,7 +22,7 @@ app.use(session({
     cookie:{secure:false},
     store: MongoStore.create({mongoUrl:process.env.DataUri})
 }))
-app.use(passport.authenticate('session'))
+app.use(passport.authenticate("session"))
 app.use(passport.initialize());
 app.use(passport.session());
 
