@@ -314,18 +314,27 @@ exports.followAndfollwing = async (req, res, next) => {
 
 exports.getUsersFollowingList = async (req, res, next) => {
     try {
-        const user = await UsersModel.findById(req.params.id).populate({path:"following",select:"FullName userName Avatar"}).populate({path:"followers", select:"FullName userName Avatar"});
+        const user = await UsersModel.findById(req.params.id).populate({ path: "following", select: "FullName userName Avatar" }).populate({ path: "followers", select: "FullName userName Avatar" });
         if (!user) {
             return res.status(404).json({
                 success: false,
                 message: "user not found with this userid"
             })
         }
+        const followingWithIsFollow = user.following.map((following) => ({
+            ...following.toObject(),
+            isFollow: user.following.some(f => f.toString() === req.user._id)
+        }));
+        const followersWithIsFollow = user.followers.map((followers) => ({
+            ...followers.toObject(),
+            isFollow: user.followers.some(f => f.toString() === req.user._id)
+        }))
+
         res.status(200).json({
             success: true,
-            userName:user.userName,
-            followings:user.following,
-            followers:user.followers
+            userName: user.userName,
+            followings: followingWithIsFollow,
+            followers: followersWithIsFollow
         })
 
     } catch (error) {
