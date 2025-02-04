@@ -70,6 +70,32 @@ exports.getAllPostWithUsers = async (req, res, next) => {
     }
 }
 
+exports.getPostById = async (req, res, next) => {
+    try {
+        const post = await PostModel.findById(req.params.id).populate("userId","FullName Avatar");
+        if (!post) {
+            res.status(404).json({
+                success: false,
+                message: "post not found with this id"
+            })
+        }
+        const isLike = post.like.includes(req.user._id);
+        const isSave = req.user.savedPost.includes(post._id);
+        res.status(200).json({
+            success: true,
+            ...post.toObject(),
+            isLike,
+            isSave
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
 
 exports.getUserAllPosts = async (req, res, next) => {
     try {
@@ -135,7 +161,7 @@ exports.getPostOfFollowing = async (req, res, next) => {
             userId: {
                 $in: user.following
             }
-        }).populate("userId", "FirstName LastName Email Avatar _id").sort({ CreatedAt: -1 })
+        }).populate("userId", "FullName Email Avatar _id").sort({ CreatedAt: -1 })
         const postWithLike = posts.map((post) => {
             const isLike = post.like.includes(req.user._id);
             const isSave = req.user.savedPost.includes(post._id);

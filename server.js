@@ -17,12 +17,12 @@ const agent = new http.Agent({
 dotenv.config({ path: "config/config.env" })
 app.use(session({
     secret:process.env.SESSION_SECRET,
-    resave:false,
+    resave:true,
     saveUninitialized:true,
-    cookie:{secure:false},
-    store: MongoStore.create({mongoUrl:process.env.DataUri})
+    cookie:{maxAge:1000*60*60},
+    // store: MongoStore.create({mongoUrl:process.env.DataUri})
 }))
-app.use(passport.authenticate("session"))
+// app.use(passport.authenticate("session"))
 app.use(passport.initialize());
 app.use(passport.session());
 

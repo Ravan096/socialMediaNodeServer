@@ -242,7 +242,7 @@ exports.deleteUser = async (req, res, next) => {
 
 exports.getSingleUser = async (req, res, next) => {
     try {
-        const singleUser = await UsersModel.findById(req.params.id);
+        const singleUser = await UsersModel.findById(req.params.id).populate('posts');
         if (!singleUser) {
             return res.status(404).json({
                 success: false,
@@ -272,6 +272,15 @@ exports.followAndfollwing = async (req, res, next) => {
                 message: "following user does not exist"
             })
         }
+
+        if (loggedInUser._id.equals(tofollowUser._id)) {
+            return res.status(400).json({
+                success: false,
+                message: "you can not follow yourself"
+            })
+        }
+
+
         if (loggedInUser.following.includes(tofollowUser._id)) {
             const tofollowindex = loggedInUser.following.indexOf(tofollowUser._id)
             loggedInUser.following.splice(tofollowindex, 1);
@@ -293,6 +302,40 @@ exports.followAndfollwing = async (req, res, next) => {
                 message: "followed"
             })
         }
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+
+exports.getUsersFollowingList = async (req, res, next) => {
+    try {
+        const user = await UsersModel.findById(req.params.id).populate({ path: "following", select: "FullName userName Avatar" }).populate({ path: "followers", select: "FullName userName Avatar" });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "user not found with this userid"
+            })
+        }
+        const followingWithIsFollow = user.following.map((following) => ({
+            ...following.toObject(),
+            isFollow: user.following.some(f => f.toString() === req.user._id)
+        }));
+        const followersWithIsFollow = user.followers.map((followers) => ({
+            ...followers.toObject(),
+            isFollow: user.followers.some(f => f.toString() === req.user._id)
+        }))
+
+        res.status(200).json({
+            success: true,
+            userName: user.userName,
+            followings: followingWithIsFollow,
+            followers: followersWithIsFollow
+        })
 
     } catch (error) {
         res.status(500).json({
