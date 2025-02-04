@@ -3,15 +3,7 @@ const UserModel = require("../model/userModel");
 
 exports.isAuthenticated = async (req, res, next) => {
     try {
-        // const { token } = req.cookies;
-        const token = req.cookies.token;
-
-        if (!token && req.headers.authorization) {
-            const authHeader = req.headers.authorization;
-            if (authHeader.startsWith("Bearer ")) {
-                token = authHeader.split(" ")[1];
-            }
-        }
+        const { token } = req.cookies;
         if (!token) {
             return res.status(401).json({
                 success: false,
