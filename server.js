@@ -41,7 +41,7 @@ cloudinary.v2.config({
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "https://mitrajunction.netlify.app/",
+        origin: "https://mitrajunction.netlify.app",
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials:true,
     }
