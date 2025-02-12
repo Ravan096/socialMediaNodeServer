@@ -11,6 +11,14 @@ const chatSchema = new mongoose.Schema({
             ref: "Users"
         }
     ],
+    groupChat: {
+        type: Boolean,
+        default: false
+    },
+    Creator: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Users"
+    },
     messages: [
         {
             sender: {
@@ -33,6 +41,9 @@ const chatSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-})
+},
+    {
+        timestamps: true
+    })
 
 module.exports = mongoose.model("Chat", chatSchema)

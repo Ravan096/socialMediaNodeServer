@@ -25,10 +25,12 @@ app.use(cors({
 const user = require('./route/userRoute');
 const post = require('./route/postRoute');
 const message = require('./route/messageRoute');
+const chat = require('./route/chatRoute')
 
 app.use("/api/v1/", user)
 app.use("/api/v1/", post)
 app.use("/api/v1/", message)
+app.use("/api/v1/", chat)
 
 
 app.get("/", (req, res, next) => {
