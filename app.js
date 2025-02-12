@@ -19,17 +19,18 @@ app.use(cookieParse());
 app.use(cors({
     origin: ["http://localhost:5173", "https://mitrajunction.netlify.app"],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"]
+    credentials: true
 }));
 
 const user = require('./route/userRoute');
 const post = require('./route/postRoute');
 const message = require('./route/messageRoute');
+const chat = require('./route/chatRoute')
 
 app.use("/api/v1/", user)
 app.use("/api/v1/", post)
 app.use("/api/v1/", message)
+app.use("/api/v1/", chat)
 
 
 app.get("/", (req, res, next) => {

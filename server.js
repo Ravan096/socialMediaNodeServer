@@ -46,11 +46,12 @@ const io = new Server(server, {
         credentials:true,
     }
 });
-let user = {}
+
 
 
 io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
+    const users = {};
 
     // **User joins the chat**
     socket.on("joinChat", (username) => {
