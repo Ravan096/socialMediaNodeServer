@@ -186,10 +186,10 @@ exports.leaveGroup = async (req, res, next) => {
             })
         }
         const remainingUser = chat.participants.filter((member) => member.toString() !== req.user._id.toString());
-        if(remainingUser.length < 2){
+        if (remainingUser.length < 2) {
             return res.status(400).json({
-                success:false,
-                message:"group have must atleast 3 member"
+                success: false,
+                message: "group have must atleast 3 member"
             })
         }
         if (req.user._id.toString() === chat.Creator.toString()) {
@@ -204,6 +204,147 @@ exports.leaveGroup = async (req, res, next) => {
         })
     } catch (error) {
         return res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+
+exports.sendAttachments = async (req, res, next) => {
+    try {
+        const { chatId } = req.body;
+        const [chat, me] = await Promise.all([chatModel.findById(chatId), UsersModel.findById(req.user._id)]);
+        if (!chat) {
+            return res.status(404).json({
+                success: false,
+                message: 'chat not found'
+            })
+        }
+        const files = req.files || [];
+        if (files.length > 1) {
+            return res.status(400).json({
+                success: false,
+                message: "please provide attachments"
+            })
+        }
+        const attachment = [];
+        const messageForDb = { content: "", senderId: me._id, chat: chat._id };
+        const messageForRealTime = { content: "", senderId: { _id: me._id, name: me.FullName }, chat: chat._id }
+        res.status(200).json({
+            success: true,
+            chat,
+            me
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+exports.getChatDetails = async (req, res, next) => {
+    try {
+        if (req.query.populate === 'true') {
+            const chat = await chatModel.findById(req.params.id).populate("participants", "FullName Avatar").lean();
+            if (!chat) {
+                return res.status(404).json({
+                    success: false,
+                    message: "chat not found"
+                })
+            }
+            chat.participants = chat.participants.map(({ _id, FullName, Avatar }) => ({
+                _id,
+                FullName,
+                Avatar: Avatar.url
+            }))
+            res.status(200).json({
+                success: true,
+                chat
+            })
+        } else {
+            const chat = await chatModel.findById(req.params.id);
+            if (!chat) {
+                return res.status(404).json({
+                    success: false,
+                    message: "chat not found"
+                })
+            }
+            res.status(200).json({
+                success: true,
+                chat
+            })
+        }
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+exports.renameGroup = async (req, res, next) => {
+    try {
+        const chat = await chatModel.findById(req.params.id);
+        const { name } = req.body;
+        if (!chat) {
+            return res.status(404).json({
+                success: false,
+                message: "chat not found"
+            })
+        }
+        if (!name) {
+            return res.status(400).json({
+                success: false,
+                message: "Group is required"
+            })
+        }
+        if (!chat.groupChat) {
+            return res.status(405).json({
+                success: false,
+                message: "this is not a group chat"
+            })
+        }
+
+        if (chat.Creator.toString() !== req.user._id.toString()) {
+            return res.status(400).json({
+                success: false,
+                message: "you are not allowed to rename the groupName"
+            })
+        }
+        chat.Name = name;
+        await chat.save();
+        emitEvent(req, REFRESH_CHATS, chat.participants);
+
+        res.status(200).json({
+            success: true,
+            chat
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+exports.deleteChats = async (req, res, next) => {
+    try {
+        const chat = await chatModel.findById(req.params.id);
+        if (!chat) {
+            return res.status(404).json({
+                success: false,
+                message: "chat not found"
+            })
+        }
+        res.status(200).json({
+            success: true,
+            chat
+        })
+    } catch (error) {
+        res.status(500).json({
             success: false,
             message: error.message
         })
