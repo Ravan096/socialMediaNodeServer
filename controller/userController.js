@@ -3,6 +3,9 @@ const UsersModel = require('../model/userModel');
 const crypto = require("crypto");
 const dataUri = require('../utils/dataUri');
 const cloudinary = require("cloudinary");
+const requestModel = require('../model/requestModel');
+const { emitEvent } = require('../features/features');
+const chatModel = require('../model/chatModel')
 
 exports.registerUser = async (req, res, next) => {
     try {
@@ -459,5 +462,87 @@ exports.resetPassword = async (req, res, next) => {
             message: error.message
         })
     }
+}
 
+
+exports.sendFriendRequest = async (req, res, next) => {
+    try {
+        const { userId } = req.body;
+        const request = await requestModel.findOne({
+            $or: [{
+                sender: req.user, receiver: userId
+            }, {
+                receiver: req.user, sender: userId
+            }]
+        })
+        if (request) {
+            return res.status(403).json({
+                success: false,
+                message: "request already send"
+            })
+        }
+
+        await requestModel.create({
+            sender: req.user,
+            receiver: userId
+        })
+
+        emitEvent(req, "NEW_REQUEST", [userId])
+        res.status(200).json({
+            success: true,
+            message: "friend request sent successfully"
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+
+exports.acceptFriendRequest = async (req, res, next) => {
+    try {
+        const { requestId, accept } = req.body;
+        const requestData = await requestModel.findById(requestId).populate("sender", "FullName").populate("receiver", "FullName");
+        if (!requestData) {
+            return res.status(404).json({
+                success: false,
+                message: "requset not found"
+            })
+        }
+        if (requestData.receiver._id.toString() !== req.user._id.toString()) {
+            return res.status(401).json({
+                success: false,
+                message: "you are not authorized to accept this request"
+            })
+        }
+        if (!accept) {
+            await requestData.deleteOne();
+            return res.status(200).json({
+                success: true,
+                message: "request rejected"
+            })
+        }
+        const memebers = [requestData.sender._id, requestData.receiver._id];
+        await Promise.all([
+            chatModel.create({
+                participants: memebers,
+                Name: `${requestData.sender.FullName}-${requestData.receiver.FullName}`
+            }),
+            requestData.deleteOne()
+        ])
+        emitEvent(req, "REFRESH_CHAT", memebers)
+        res.status(200).json({
+            success: true,
+            message: "freiend request accepted",
+            senderId : requestData.sender._id
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
 }

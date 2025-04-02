@@ -1,6 +1,8 @@
 const express = require('express');
 const { registerUser, getUsers, deleteUser, getSingleUser, userLogin, followAndfollwing, logoutUser,
-    changePassword, forgetPassword, resetPassword, updateUser, getMe, getUsersFollowingList } = require('../controller/userController');
+    changePassword, forgetPassword, resetPassword, updateUser, getMe, getUsersFollowingList,
+    sendFriendRequest,
+    acceptFriendRequest } = require('../controller/userController');
 const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
 const passport = require('passport')
@@ -19,6 +21,8 @@ router.route("/forgetPassword").post(forgetPassword);
 router.route("/password/reset/:token").put(resetPassword);
 router.route('/me').get(isAuthenticated, getMe);
 router.route('/userlist/:id').get(isAuthenticated, getUsersFollowingList);
+router.route('/sendRequest').get(isAuthenticated, sendFriendRequest);
+router.route('/acceptRequest').post(isAuthenticated, acceptFriendRequest)
 router.get('/googlelogin', passport.authenticate('google',
     { scope: ['profile', 'email'] }));
 

@@ -34,6 +34,37 @@ exports.isAuthenticated = async (req, res, next) => {
 }
 
 
+exports.socketAuth = async (err, socket, next) => {
+    try {
+        if (err) return next(err);
+        const authHeader = socket.handshake.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({
+                success: false,
+                message: "Authorization token is missing or invalid",
+            });
+        }
+
+        const token = authHeader.split(' ')[1];
+
+        const secretKey = process.env.JWT_SECRET;
+        const decoded = jwt.verify(token, secretKey);
+        const user = await UserModel.findById(decoded._id);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+        socket.user = user;
+        next();
+    } catch (error) {
+        return next(new Error(error.message))
+    }
+}
+
+
 
 
 // const jwt = require('jsonwebtoken');
