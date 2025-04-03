@@ -64,7 +64,7 @@ io.use(async (socket, next) => {
     await socketAuth(null, socket, next);
 });
 
-const userSocketIds = new Map();
+module.exports = userSocketIds = new Map();
 
 io.on("connection", (socket) => {
     // console.log(`User connected: ${socket.id}`);
@@ -145,5 +145,3 @@ server.listen(process.env.PORT, () => {
     console.log(`Server is running on http://localhost:${process.env.PORT}`)
 });
 
-
-module.exports = { userSocketIds }
