@@ -31,7 +31,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-const userSocketIds = new Map();
 
 connectDatabase();
 connectPassport();
@@ -65,6 +64,7 @@ io.use(async (socket, next) => {
     await socketAuth(null, socket, next);
 });
 
+const userSocketIds = new Map();
 
 io.on("connection", (socket) => {
     // console.log(`User connected: ${socket.id}`);
