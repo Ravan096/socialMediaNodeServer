@@ -13,6 +13,8 @@ const { getSockets } = require('./lib/helper');
 const { NEW_MESSAGEALERTS } = require('./constants/constant');
 const MessageModel = require('./model/messageModel');
 const cookieParser = require('cookie-parser');
+const { v4 } = require('uuid');
+const { userSocketIds } = require('./lib/socketStore');
 const { socketAuth } = require('./middleware/auth');
 const agent = new http.Agent({
     rejectUnauthorized: false
@@ -31,7 +33,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-const userSocketIds = new Map();
+
 
 connectDatabase();
 connectPassport();
@@ -91,7 +93,7 @@ io.on("connection", (socket) => {
     socket.on("NEW_MESSAGES", async ({ chatId, members, message }) => {
         const messageForRealTime = {
             content: message,
-            _id: "testid",
+            _id: v4(),
             sender: {
                 _id: users._id,
                 name: users.FullName
@@ -110,7 +112,7 @@ io.on("connection", (socket) => {
             message: messageForRealTime
         });
         io.to(usersocket).emit(NEW_MESSAGEALERTS, { chatId })
-        // await MessageModel.create(messageForDb)
+        await MessageModel.create(messageForDb)
         // socket.broadcast.emit(NEW_MESSAGES, data);
     });
 
@@ -146,4 +148,4 @@ server.listen(process.env.PORT, () => {
 });
 
 
-module.exports = { userSocketIds }
+// module.exports = { userSocketIds }

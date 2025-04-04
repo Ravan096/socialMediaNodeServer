@@ -19,24 +19,24 @@ const chatSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Users"
     },
-    messages: [
-        {
-            sender: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "Users",
-                required: true
-            },
-            content: {
-                type: String,
-                required: true
-            },
-            timestamp: {
-                type: Date,
-                default: Date.now
-            }
+    // messages: [
+    //     {
+    //         sender: {
+    //             type: mongoose.Schema.Types.ObjectId,
+    //             ref: "Users",
+    //             required: true
+    //         },
+    //         content: {
+    //             type: String,
+    //             required: true
+    //         },
+    //         timestamp: {
+    //             type: Date,
+    //             default: Date.now
+    //         }
 
-        }
-    ],
+    //     }
+    // ],
     CreatedAt: {
         type: Date,
         default: Date.now
