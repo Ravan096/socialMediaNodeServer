@@ -13,7 +13,10 @@ const { getSockets } = require('./lib/helper');
 const { NEW_MESSAGEALERTS } = require('./constants/constant');
 const MessageModel = require('./model/messageModel');
 const cookieParser = require('cookie-parser');
+const { v4 } = require('uuid');
+const { userSocketIds } = require('./lib/socketStore');
 const { socketAuth } = require('./middleware/auth');
+const ChatModel = require("./model/chatModel");
 const agent = new http.Agent({
     rejectUnauthorized: false
 })
@@ -30,6 +33,7 @@ app.use(session({
 // app.use(passport.authenticate("session"))
 app.use(passport.initialize());
 app.use(passport.session());
+
 
 
 connectDatabase();
@@ -67,7 +71,7 @@ io.use(async (socket, next) => {
 module.exports = userSocketIds = new Map();
 
 io.on("connection", (socket) => {
-    // console.log(`User connected: ${socket.id}`);
+    console.log(`User connected: ${socket.id}`);
     const users = socket.user;
     // console.log(users)
     userSocketIds.set(users._id.toString(), socket.id)
@@ -89,19 +93,24 @@ io.on("connection", (socket) => {
     });
 
     socket.on("NEW_MESSAGES", async ({ chatId, members, message }) => {
+        if (!chatId || !members || !message) {
+            console.error("Missing data in NEW_MESSAGES", { chatId, members, message });
+            return;
+        }
+
         const messageForRealTime = {
             content: message,
-            _id: "testid",
-            sender: {
-                _id: users._id,
-                name: users.FullName
+            _id: v4(),
+            senderId: {
+                _id: socket.user._id,
+                name: socket.user.FullName
             },
             chat: chatId,
             createdAt: new Date().toISOString()
         };
         const messageForDb = {
             content: message,
-            sender: users._id,
+            senderId: users._id,
             chat: chatId
         };
         const usersocket = getSockets(members);
@@ -110,7 +119,7 @@ io.on("connection", (socket) => {
             message: messageForRealTime
         });
         io.to(usersocket).emit(NEW_MESSAGEALERTS, { chatId })
-        // await MessageModel.create(messageForDb)
+        await MessageModel.create(messageForDb)
         // socket.broadcast.emit(NEW_MESSAGES, data);
     });
 
@@ -145,3 +154,5 @@ server.listen(process.env.PORT, () => {
     console.log(`Server is running on http://localhost:${process.env.PORT}`)
 });
 
+
+// module.exports = { userSocketIds }

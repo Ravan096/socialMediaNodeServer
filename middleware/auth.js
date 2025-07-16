@@ -60,7 +60,7 @@ exports.socketAuth = async (err, socket, next) => {
         socket.user = user;
         next();
     } catch (error) {
-        return next(new Error(error.message))
+        return next(new Error("Authentication failed: " + error.message))
     }
 }
 

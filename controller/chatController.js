@@ -2,21 +2,66 @@ const { ALERT, REFRESH_CHATS } = require('../constants/constant');
 const { emitEvent } = require('../features/features');
 const { otherMember } = require('../lib/helper');
 const chatModel = require('../model/chatModel');
+const messageModel = require('../model/messageModel');
 const UsersModel = require('../model/userModel');
 
 exports.createChat = async (req, res, next) => {
     try {
-        const { name, particpant, message, receiverId } = req.body;
-        const receiverUser = await UsersModel.findById({ _id: receiverId });
-        await chatModel.create({
-            Name: name,
-
+        const { name, participantIds, isGroup } = req.body;
+        const participants = [...participantIds, req.user._id];
+        const chat = await chatModel.create({
+            Name: isGroup ? name : "Private Chat",
+            participants,
+            groupChat: isGroup,
+            Creator: req.user._id
+        })
+        res.status(201).json({
+            success: true,
+            chat
         })
     } catch (error) {
         res.status(500).json({
             success: false,
             message: error.message
         })
+    }
+}
+
+exports.startOrGetChat = async (req, res, next) => {
+    try {
+        const loggedInUser = req.user._id;
+        const participantId = req.body.participantId;
+        if (!participantId) {
+            return res.status(400).json({ success: false, message: "Participant ID required" });
+        }
+        let existingChat = await chatModel.findOne({
+            groupChat: false,
+            participants: { $all: [loggedInUser, participantId] },
+            $expr: { $eq: [{ $size: "$participants" }, 2] }
+        }).populate("participants", "FullName Avatar");
+
+        if (existingChat) {
+            return res.status(200).json({
+                success: true,
+                chat: existingChat
+            });
+        }
+        const newChat = await chatModel.create({
+            Name: "Private Chat",
+            participants: [loggedInUser, participantId],
+            groupChat: false,
+            Creator: loggedInUser
+        })
+        return res.status(201).json({
+            success: true,
+            chat: newChat
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+
     }
 }
 
@@ -52,29 +97,27 @@ exports.creatGroupChat = async (req, res, next) => {
     }
 }
 
-
 exports.getMyChats = async (req, res, next) => {
     try {
-        const chats = await chatModel.find({ participants: req.user }).populate("participants", "FullName Avatar");
-        const transformChats = chats.map((item) => {
-            const othermember = otherMember(item.participants, req.user)
-            return {
-                chat_id: item._id,
-                groupChat: item.groupChat,
-                name: item.groupChat ? item.Name : othermember.FullName,
-                participants: item.participants,
-                avatar: item.groupChat ? item.participants.slice(0, 3).map(({ Avatar }) => Avatar.url) : [othermember.Avatar.url],
-                participants: item.participants.reduce((prev, curr) => {
-                    if (curr._id.toString() !== req.user.toString()) {
-                        prev.push(curr._id)
-                    }
-                    return prev
-                }, [])
-            }
-        })
+        const chats = await chatModel.find({ participants: req.user._id }).
+            populate("participants", "FullName Avatar")
+            .sort({ updatedAt: -1 }).lean();
+        const enhancedChats = await Promise.all(
+            chats.map(async (chat) => {
+                const lastMessage = await messageModel.findOne({ chat: chat._id })
+                    .sort({ timestamp: -1 })
+                    .populate("senderId", "FullName Avatar")
+                    .lean();
+
+                return {
+                    ...chat,
+                    lastMessage: lastMessage || null
+                };
+            })
+        );
         res.status(200).json({
             success: true,
-            chats: transformChats
+            enhancedChats
         })
     } catch (error) {
         res.status(500).json({
@@ -83,6 +126,37 @@ exports.getMyChats = async (req, res, next) => {
         })
     }
 }
+
+// exports.getMyChats = async (req, res, next) => {
+//     try {
+//         const chats = await chatModel.find({ participants: req.user }).populate("participants", "FullName Avatar");
+//         const transformChats = chats.map((item) => {
+//             const othermember = otherMember(item.participants, req.user)
+//             return {
+//                 chat_id: item._id,
+//                 groupChat: item.groupChat,
+//                 name: item.groupChat ? item.Name : othermember.FullName,
+//                 participants: item.participants,
+//                 avatar: item.groupChat ? item.participants.slice(0, 3).map(({ Avatar }) => Avatar.url) : [othermember.Avatar.url],
+//                 participants: item.participants.reduce((prev, curr) => {
+//                     if (curr._id.toString() !== req.user.toString()) {
+//                         prev.push(curr._id)
+//                     }
+//                     return prev
+//                 }, [])
+//             }
+//         })
+//         res.status(200).json({
+//             success: true,
+//             chats: transformChats
+//         })
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: error.message
+//         })
+//     }
+// }
 
 exports.addMembers = async (req, res, next) => {
     try {
