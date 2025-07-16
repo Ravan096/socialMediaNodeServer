@@ -34,7 +34,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-
+const userSocketIds = new Map();
 
 connectDatabase();
 connectPassport();
@@ -155,4 +155,4 @@ server.listen(process.env.PORT, () => {
 });
 
 
-// module.exports = { userSocketIds }
+module.exports = { userSocketIds }
