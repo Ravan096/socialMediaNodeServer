@@ -34,7 +34,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-const userSocketIds = new Map();
+// const userSocketIds = new Map();
 
 connectDatabase();
 connectPassport();
@@ -68,7 +68,7 @@ io.use(async (socket, next) => {
     await socketAuth(null, socket, next);
 });
 
-module.exports = userSocketIds = new Map();
+// module.exports = userSocketIds = new Map();
 
 io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
@@ -155,4 +155,4 @@ server.listen(process.env.PORT, () => {
 });
 
 
-module.exports = { userSocketIds }
+// module.exports = { userSocketIds }
