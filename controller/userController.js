@@ -42,7 +42,7 @@ exports.registerUser = async (req, res, next) => {
 exports.userLogin = async (req, res, next) => {
     try {
         const { Email, password } = req.body;
-        let user = await UsersModel.findOne({ Email }).select("+Password");
+        let user = await UsersModel.findOne({ Email }).select("+Password").populate("posts", "image _id");
         if (!user) {
             return res.status(400).json({
                 success: false,
@@ -537,10 +537,33 @@ exports.acceptFriendRequest = async (req, res, next) => {
         res.status(200).json({
             success: true,
             message: "freiend request accepted",
-            senderId : requestData.sender._id
+            senderId: requestData.sender._id
         })
     } catch (error) {
         return res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+
+
+exports.searchUsers = async (req, res, next) => {
+    try {
+        const query = req.query.q;
+        if (!query) return res.json({ users: [] })
+
+        const regex = new RegExp(query, 'i');
+        const users = await UsersModel.find({
+            $or: [
+                { FullName: { $regex: regex } },
+                { userName: { $regex: regex } }
+            ]
+        }).select("_id FullName userName Avatar");
+        res.json({ users })
+    } catch (error) {
+        res.status(500).json({
             success: false,
             message: error.message
         })
