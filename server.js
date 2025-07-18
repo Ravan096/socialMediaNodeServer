@@ -28,7 +28,7 @@ app.use(session({
     resave: true,
     saveUninitialized: true,
     cookie: { maxAge: 1000 * 60 * 60 },
-    store: MongoStore.create({mongoUrl:process.env.DataUri})
+    store: MongoStore.create({ mongoUrl: process.env.DataUri })
 }))
 // app.use(passport.authenticate("session"))
 app.use(passport.initialize());
@@ -71,15 +71,16 @@ io.use(async (socket, next) => {
 // module.exports = userSocketIds = new Map();
 
 io.on("connection", (socket) => {
-    console.log(`User connected: ${socket.id}`);
+    // console.log(`User connected: ${socket.id}`);
     const users = socket.user;
-    // console.log(users)
+    // console.log("👉 socket.user:", users);
+    // console.log("✅ Mapping user ID to socket:", users._id.toString(), socket.id);
     userSocketIds.set(users._id.toString(), socket.id)
 
     // **User joins the chat**
     socket.on("joinChat", (username) => {
         users[socket.id] = username;
-        console.log(`${username} joined the chat`);
+        // console.log(`${username} joined the chat`);
         socket.broadcast.emit("userJoined", `${username} has joined the chat.`);
     });
 
@@ -93,6 +94,7 @@ io.on("connection", (socket) => {
     });
 
     socket.on("NEW_MESSAGES", async ({ chatId, members, message }) => {
+
         if (!chatId || !members || !message) {
             console.error("Missing data in NEW_MESSAGES", { chatId, members, message });
             return;
@@ -101,7 +103,7 @@ io.on("connection", (socket) => {
         const messageForRealTime = {
             content: message,
             _id: v4(),
-            senderId: {
+            sender: {
                 _id: socket.user._id,
                 name: socket.user.FullName
             },
@@ -110,15 +112,25 @@ io.on("connection", (socket) => {
         };
         const messageForDb = {
             content: message,
-            senderId: users._id,
+            senderId: socket.user._id,
             chat: chatId
         };
         const usersocket = getSockets(members);
-        io.to(usersocket).emit("NEW_MESSAGES", {
-            chatId,
-            message: messageForRealTime
-        });
-        io.to(usersocket).emit(NEW_MESSAGEALERTS, { chatId })
+        // console.log("📤 Sockets to emit:", usersocket);
+        usersocket.forEach(socketId => {
+            if (socketId) {
+                io.to(socketId).emit("NEW_MESSAGES", {
+                    chatId,
+                    message: messageForRealTime
+                });
+                io.to(socketId).emit("NEW_MESSAGEALERTS",{chatId})
+            }
+        })
+        // io.to(usersocket).emit("NEW_MESSAGES", {
+        //     chatId,
+        //     message: messageForRealTime
+        // });
+        // io.to(usersocket).emit(NEW_MESSAGEALERTS, { chatId })
         await MessageModel.create(messageForDb)
         // socket.broadcast.emit(NEW_MESSAGES, data);
     });
