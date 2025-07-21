@@ -66,6 +66,30 @@ exports.startOrGetChat = async (req, res, next) => {
 }
 
 
+exports.resetUnreadCount = async (req, res) => {
+    try {
+        const chatId = req.params.id;
+        const userId = req.user._id.toString();
+        const chat = await chatModel.findById(chatId);
+        if (!chat) {
+            return res.status(404).json({ success: false, message: 'Chat not found' });
+        }
+        chat.unreadCounts.set(userId, 0);
+        await chat.save();
+        res.status(200).json({
+            success: true,
+            message: "Unread count reset seccessfully"
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "something went wrong"
+        })
+    }
+}
+
+
 exports.creatGroupChat = async (req, res, next) => {
     try {
         const { name, participants } = req.body;

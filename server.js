@@ -19,7 +19,8 @@ const { socketAuth } = require('./middleware/auth');
 const ChatModel = require("./model/chatModel");
 const agent = new http.Agent({
     rejectUnauthorized: false
-})
+});
+const { addSocket, getSocketIds, removeSocket } = require("./lib/socketStore")
 
 
 dotenv.config({ path: "config/config.env" })
@@ -72,16 +73,12 @@ io.use(async (socket, next) => {
 
 io.on("connection", (socket) => {
     // console.log(`User connected: ${socket.id}`);
-    const users = socket.user;
+    const user = socket.user;
     // console.log("👉 socket.user:", users);
     // console.log("✅ Mapping user ID to socket:", users._id.toString(), socket.id);
-    userSocketIds.set(users._id.toString(), socket.id)
-
-    // **User joins the chat**
-    socket.on("joinChat", (username) => {
-        users[socket.id] = username;
-        // console.log(`${username} joined the chat`);
-        socket.broadcast.emit("userJoined", `${username} has joined the chat.`);
+    addSocket(user._id.toString(), socket.id);
+    socket.on("joinChat", (chatId) => {
+        socket.join(chatId);
     });
 
     // **Handle typing event**
@@ -104,35 +101,67 @@ io.on("connection", (socket) => {
             content: message,
             _id: v4(),
             sender: {
-                _id: socket.user._id,
-                name: socket.user.FullName
+                _id: user._id,
+                name: user.FullName
             },
             chat: chatId,
             createdAt: new Date().toISOString()
         };
         const messageForDb = {
             content: message,
-            senderId: socket.user._id,
+            senderId: user._id,
             chat: chatId
         };
-        const usersocket = getSockets(members);
-        // console.log("📤 Sockets to emit:", usersocket);
-        usersocket.forEach(socketId => {
-            if (socketId) {
-                io.to(socketId).emit("NEW_MESSAGES", {
+
+        try {
+            const senderId = user._id.toString();
+            const update = {
+                $set: {
+                    lastMessage: message,
+                    updatedAt: new Date()
+                }
+            };
+            const unsetSender = members.filter(m => m !== senderId);
+            unsetSender.forEach(id => {
+                update.$inc = {
+                    ...(update.$inc || {}),
+                    [`unreadCounts.${id}`]: 1
+                }
+            })
+            await ChatModel.findByIdAndUpdate(chatId, update);
+
+            unsetSender.forEach(async (id) => {
+                const socketIds = getSocketIds(id);
+                if (socketIds && socketIds.length > 0) {
+                    const chat = await ChatModel.findById(chatId);
+                    const newCount = chat.unreadCounts?.[id] || 0;
+
+                    socketIds.forEach(socketId => {
+                        io.to(socketId).emit("UPDATE_UNREAD_COUNT", {
+                            chatId,
+                            count: newCount
+                        });
+                    });
+                }
+            })
+        } catch (error) {
+            console.log("failed to update chat metadata", error)
+        }
+
+
+        members.forEach(member => {
+            const socketIds = getSocketIds(member._id || member);
+            socketIds.forEach(sId => {
+                io.to(sId).emit("NEW_MESSAGES", {
                     chatId,
-                    message: messageForRealTime
+                    message: messageForRealTime,
                 });
-                io.to(socketId).emit("NEW_MESSAGEALERTS",{chatId})
-            }
-        })
-        // io.to(usersocket).emit("NEW_MESSAGES", {
-        //     chatId,
-        //     message: messageForRealTime
-        // });
-        // io.to(usersocket).emit(NEW_MESSAGEALERTS, { chatId })
-        await MessageModel.create(messageForDb)
-        // socket.broadcast.emit(NEW_MESSAGES, data);
+                io.to(sId).emit("NEW_MESSAGEALERTS", { chatId });
+            });
+        });
+
+
+        await MessageModel.create(messageForDb);
     });
 
     // **Handle sending a message**
@@ -152,11 +181,7 @@ io.on("connection", (socket) => {
 
     // **Handle user disconnection**
     socket.on("disconnect", () => {
-        console.log(`User disconnected: ${socket.id}`);
-        userSocketIds.delete(users._id.toString())
-        const username = users[socket.id];
-        socket.broadcast.emit("userLeft", `${username} has left the chat.`);
-        delete users[socket.id];
+        removeSocket(user._id.toString(), socket.id);
     });
 });
 
