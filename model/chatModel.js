@@ -19,6 +19,15 @@ const chatSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Users"
     },
+    lastMessage: {
+        type: String,
+        default: '',
+    },
+    unreadCounts: {
+        type: Map,
+        of: Number,
+        default: {},
+    },
     // messages: [
     //     {
     //         sender: {
